@@ -1,0 +1,12 @@
+
+Total Users: 7
+Total Donations: 12
+------------------------------------------------
+Donation Counts by Status:
+delivered: 1
+completed: 6
+assigned: 5
+------------------------------------------------
+Calculated Delivered (delivered + completed): 7
+Calculated Pending (others): 5
+        
