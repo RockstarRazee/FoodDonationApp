@@ -128,7 +128,7 @@ const VolunteerProfile = () => {
                             <div>
                                 <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number</label>
                                 <div className="relative">
-                                    <FaPhone className="absolute left-4 top-3.5 text-gray-400" />
+                                    <FaPhone className="absolute left-4 top-3.5 text-gray-400 scale-x-[-1]" />
                                     <input
                                         type="text"
                                         value={formData.phone}

@@ -1,0 +1,8 @@
+--- USER LIST ---
+ID: 69569255cfb4f79fe0472e59 | Name: Test User | Email: undefined | Role: donor
+ID: 69569344fe5a6ad7faa9d876 | Name: Donor | Email: undefined | Role: donor
+ID: 6956934bfe5a6ad7faa9d879 | Name: Volunteer | Email: undefined | Role: volunteer
+ID: 6956ae178faf29707eb0fc95 | Name: Razee | Email: razeerockstar@gmail.com | Role: admin
+ID: 69579ac19dfa19ce0ea73934 | Name: Dhasleeman | Email: razeecurd@gmail.com | Role: donor
+ID: 6957ad8844ae0fdafc9f25cc | Name: MUHAIDEEN ABDUL RAZEED V 24ECR060 | Email: muhaideenv.ug.24.ec@francisxavier.ac.in | Role: volunteer
+ID: 6957b010414f18f64ba290f6 | Name: S | Email: sihgrandfinale2025@gmail.com | Role: recipient

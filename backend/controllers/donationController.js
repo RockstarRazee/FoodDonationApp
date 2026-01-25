@@ -279,6 +279,7 @@ exports.generateOtp = async (req, res) => {
             donation.pickupOtp = {
                 code: otpCode,
                 generatedAt: new Date(),
+                expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes validity
                 verified: false
             };
             await donation.save();
@@ -304,6 +305,7 @@ exports.generateOtp = async (req, res) => {
             donation.deliveryOtp = {
                 code: otpCode,
                 generatedAt: new Date(),
+                expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 minutes validity
                 verified: false
             };
             await donation.save();
@@ -363,6 +365,10 @@ exports.updateStatus = async (req, res) => {
                 return res.status(400).json({ message: 'Invalid Donor OTP' });
             }
 
+            if (donation.pickupOtp.expiresAt && new Date() > new Date(donation.pickupOtp.expiresAt)) {
+                return res.status(400).json({ message: 'OTP has expired. Please regenerate.' });
+            }
+
             donation.status = 'picked';
             donation.pickedAt = new Date();
             donation.pickupOtp.verified = true;
@@ -379,6 +385,10 @@ exports.updateStatus = async (req, res) => {
 
             if (donation.deliveryOtp.code !== otp) {
                 return res.status(400).json({ message: 'Invalid Recipient OTP' });
+            }
+
+            if (donation.deliveryOtp.expiresAt && new Date() > new Date(donation.deliveryOtp.expiresAt)) {
+                return res.status(400).json({ message: 'OTP has expired. Please regenerate.' });
             }
 
             donation.status = 'delivered';

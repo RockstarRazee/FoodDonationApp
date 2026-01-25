@@ -162,7 +162,7 @@ const AdminProfile = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
                                 <div className="relative">
-                                    <FaPhone className="absolute left-3 top-3 text-gray-400" />
+                                    <FaPhone className="absolute left-3 top-3 text-gray-400 scale-x-[-1]" />
                                     <input
                                         type="tel"
                                         name="phone"

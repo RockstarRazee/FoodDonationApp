@@ -20,8 +20,9 @@ exports.getStats = async (req, res) => {
     try {
         await checkExpiredDonations();
 
-        const totalUsers = await User.countDocuments();
+        const totalUsers = await User.countDocuments({ role: { $ne: 'admin' } });
         const activeUsers = await User.countDocuments({
+            role: { $ne: 'admin' },
             lastLogin: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
         });
 
@@ -124,7 +125,7 @@ exports.getPerformance = async (req, res) => {
 // @access  Private (Admin)
 exports.getUsers = async (req, res) => {
     try {
-        const users = await User.find().select('-otp -otpExpires').sort({ createdAt: -1 });
+        const users = await User.find({ role: { $ne: 'admin' } }).select('-otp -otpExpires').sort({ createdAt: -1 });
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: error.message });

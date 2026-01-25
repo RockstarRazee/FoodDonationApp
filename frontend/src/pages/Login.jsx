@@ -5,6 +5,48 @@ import { GoogleLogin } from '@react-oauth/google';
 import AuthLayout from '../components/auth/AuthLayout';
 import LoginCard from '../components/auth/LoginCard';
 import RoleDivider from '../components/auth/RoleDivider';
+import { resendOtp } from '../services/api';
+
+const ResendOtpButton = ({ email }) => {
+    const [timer, setTimer] = useState(30); // 30 seconds
+    const [canResend, setCanResend] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (timer > 0) {
+            const interval = setInterval(() => setTimer(t => t - 1), 1000);
+            return () => clearInterval(interval);
+        } else {
+            setCanResend(true);
+        }
+    }, [timer]);
+
+    const handleResend = async () => {
+        setLoading(true);
+        try {
+            await resendOtp(email);
+            setTimer(30);
+            setCanResend(false);
+            alert('OTP Resent Successfully');
+        } catch (error) {
+            console.error(error);
+            alert('Failed to resend OTP');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={handleResend}
+            disabled={!canResend || loading}
+            className={`w-full text-sm font-bold transition-colors py-2 ${canResend ? 'text-blue-600 hover:text-blue-800' : 'text-gray-400 cursor-not-allowed'}`}
+        >
+            {loading ? 'Sending...' : canResend ? 'Resend OTP' : `Resend OTP in ${Math.floor(timer / 60)}:${(timer % 60).toString().padStart(2, '0')}`}
+        </button>
+    );
+};
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -109,6 +151,9 @@ const Login = () => {
                             >
                                 Verify & Login
                             </button>
+
+                            <ResendOtpButton email={email} />
+
                             <button
                                 type="button"
                                 onClick={() => setShowOtp(false)}

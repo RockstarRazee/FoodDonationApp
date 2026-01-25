@@ -10,6 +10,7 @@ const DonorDonations = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const [loading, setLoading] = useState(true);
     const [expandedRow, setExpandedRow] = useState(null);
+    const [visibleCount, setVisibleCount] = useState(15);
 
     useEffect(() => {
         fetchDonations();
@@ -76,6 +77,7 @@ const DonorDonations = () => {
             );
         }
         setFilteredDonations(temp);
+        setVisibleCount(15); // Reset pagination on filter change
     };
 
     const stats = {
@@ -205,7 +207,7 @@ const DonorDonations = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {filteredDonations.map(donation => (
+                            {filteredDonations.slice(0, visibleCount).map(donation => (
                                 <>
                                     <tr
                                         key={donation._id}
@@ -377,7 +379,7 @@ const DonorDonations = () => {
                                                                     <div>
                                                                         <p className="font-bold text-gray-800 text-lg">{donation.volunteer.name}</p>
                                                                         <div className="flex items-center text-sm text-gray-500">
-                                                                            <FaPhone className="mr-2 text-gray-400" /> {donation.volunteer.phone || 'N/A'}
+                                                                            <FaPhone className="mr-2 text-gray-400 scale-x-[-1]" /> {donation.volunteer.phone || 'N/A'}
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -415,6 +417,26 @@ const DonorDonations = () => {
                             )}
                         </tbody>
                     </table>
+                </div>
+                {/* Pagination Controls */}
+                <div className="flex justify-center space-x-4 p-4 border-t border-gray-100">
+                    {visibleCount < filteredDonations.length && (
+                        <button
+                            onClick={() => setVisibleCount(prev => prev + 10)}
+                            className="flex items-center text-emerald-600 font-semibold hover:text-emerald-800 transition-colors"
+                        >
+                            See More <FaChevronDown className="ml-2" />
+                        </button>
+                    )}
+
+                    {visibleCount > 15 && (
+                        <button
+                            onClick={() => setVisibleCount(15)}
+                            className="flex items-center text-gray-500 font-semibold hover:text-gray-700 transition-colors"
+                        >
+                            See Less <FaChevronUp className="ml-2" />
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

@@ -63,6 +63,7 @@ const DonationSchema = new mongoose.Schema({
     pickupOtp: {
         code: String,
         generatedAt: Date,
+        expiresAt: Date,
         verified: {
             type: Boolean,
             default: false
@@ -71,6 +72,7 @@ const DonationSchema = new mongoose.Schema({
     deliveryOtp: {
         code: String,
         generatedAt: Date,
+        expiresAt: Date,
         verified: {
             type: Boolean,
             default: false

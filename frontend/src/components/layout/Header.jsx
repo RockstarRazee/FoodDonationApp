@@ -98,6 +98,7 @@ const Header = () => {
         if (path === 'orders') return 'Order Management';
         if (path === 'analytics' && user?.role === 'admin') return 'Analytics & Reports';
         if (path === 'performance') return 'Team Performance';
+        if (path === 'users') return 'User List';
 
         // Donor
         if (path === 'overview') return 'Donor Overview';

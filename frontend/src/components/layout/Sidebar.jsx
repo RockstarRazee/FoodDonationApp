@@ -13,7 +13,9 @@ const Sidebar = ({ logout }) => {
             return [
                 { path: 'orders', label: 'Orders & Deliveries', icon: FaBoxOpen },
                 { path: 'analytics', label: 'Analytics', icon: FaChartLine },
-                { path: 'performance', label: 'Performance', icon: FaUsers },
+                { path: 'users', label: 'User List', icon: FaUsers },
+                { path: 'orders', label: 'Orders & Deliveries', icon: FaBoxOpen },
+                { path: 'performance', label: 'Performance', icon: FaChartPie },
                 { path: 'profile', label: 'Profile', icon: FaUser },
             ];
         } else if (user?.role === 'donor') {

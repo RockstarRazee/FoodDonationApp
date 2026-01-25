@@ -20,6 +20,7 @@ api.interceptors.request.use(
 
 export const googleLogin = (token) => api.post('/auth/google', { token });
 export const verifyOtp = (email, otp) => api.post('/auth/google/verify-otp', { email, otp });
+export const resendOtp = (email) => api.post('/auth/resend-otp', { email });
 export const updateRole = (role) => api.put('/auth/update-role', { role });
 export const getUserProfile = () => api.get('/auth/profile');
 export const updateUserProfile = (data) => api.put('/auth/profile', data);

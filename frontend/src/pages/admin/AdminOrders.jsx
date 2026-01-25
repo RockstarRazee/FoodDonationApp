@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { getAdminDonations } from '../../services/api';
-import { FaSearch, FaFilter, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaMapMarkerAlt, FaChevronDown, FaChevronUp, FaClipboardList, FaUser, FaTruck, FaCheckCircle, FaBoxOpen, FaClock } from 'react-icons/fa';
 
 const AdminOrders = () => {
     const [donations, setDonations] = useState([]);
@@ -8,6 +8,8 @@ const AdminOrders = () => {
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [loading, setLoading] = useState(true);
+    const [visibleCount, setVisibleCount] = useState(15);
+    const [expandedRow, setExpandedRow] = useState(null);
 
     useEffect(() => {
         fetchDonations();
@@ -40,6 +42,15 @@ const AdminOrders = () => {
             );
         }
         setFilteredDonations(temp);
+        setVisibleCount(15); // Reset pagination on filter change
+    };
+
+    const toggleRow = (id) => {
+        if (expandedRow === id) {
+            setExpandedRow(null);
+        } else {
+            setExpandedRow(id);
+        }
     };
 
     const StatusBadge = ({ status }) => {
@@ -104,43 +115,182 @@ const AdminOrders = () => {
                                 <th className="px-6 py-4 font-semibold">Volunteer</th>
                                 <th className="px-6 py-4 font-semibold">Date</th>
                                 <th className="px-6 py-4 font-semibold">Time</th>
+                                <th className="px-6 py-4 font-semibold"></th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {filteredDonations.map(donation => (
-                                <tr key={donation._id} className="hover:bg-blue-50 transition-colors group">
-                                    <td className="px-6 py-4 font-medium text-gray-900">
-                                        {donation.foodType}
-                                        <span className="block text-xs text-gray-400 font-normal">{donation.quantity}</span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <StatusBadge status={donation.status} />
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                        <div className="flex items-center">
-                                            <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold mr-2">
-                                                {donation.donor?.name.charAt(0)}
+                            {filteredDonations.slice(0, visibleCount).map(donation => (
+                                <Fragment key={donation._id}>
+                                    <tr
+                                        className={`hover:bg-blue-50 transition-colors group cursor-pointer ${expandedRow === donation._id ? 'bg-blue-50' : ''}`}
+                                        onClick={() => toggleRow(donation._id)}
+                                    >
+                                        <td className="px-6 py-4 font-medium text-gray-900">
+                                            {donation.foodType}
+                                            <span className="block text-xs text-gray-400 font-normal">{donation.quantity}</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <StatusBadge status={donation.status} />
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                            <div className="flex items-center">
+                                                <div className="h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold mr-2">
+                                                    {donation.donor?.name.charAt(0)}
+                                                </div>
+                                                {donation.donor?.name}
                                             </div>
-                                            {donation.donor?.name}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                        {donation.recipient ? donation.recipient.name : <span className="text-gray-400 italic">Pending</span>}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-600">
-                                        {donation.volunteer ? donation.volunteer.name : <span className="text-gray-400 italic">Unassigned</span>}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                        {new Date(donation.createdAt).toLocaleDateString()}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                        {new Date(donation.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                            {donation.recipient ? donation.recipient.name : <span className="text-gray-400 italic">Pending</span>}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-600">
+                                            {donation.volunteer ? donation.volunteer.name : <span className="text-gray-400 italic">Unassigned</span>}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                            {new Date(donation.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                            {new Date(donation.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </td>
+                                        <td className="px-6 py-4 text-gray-400">
+                                            {expandedRow === donation._id ? <FaChevronUp /> : <FaChevronDown />}
+                                        </td>
+                                    </tr>
+                                    {expandedRow === donation._id && (
+                                        <tr className="bg-gray-50 border-t border-gray-100 transition-all duration-300">
+                                            <td colSpan="8" className="px-6 py-8">
+                                                <div className="w-full px-2">
+                                                    <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">Order Progress</h4>
+
+                                                    <div className="relative mb-8">
+                                                        {/* Progress Bar Background */}
+                                                        <div className="absolute top-1/2 left-0 w-full h-1.5 bg-gray-100 -translate-y-1/2 rounded-full -z-0"></div>
+
+                                                        {/* Active Progress Bar */}
+                                                        <div
+                                                            className="absolute top-1/2 left-0 h-1.5 -translate-y-1/2 rounded-full -z-0 transition-all duration-1000 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500 shadow-sm"
+                                                            style={{
+                                                                width: donation.status === 'completed' || donation.status === 'delivered' ? '100%'
+                                                                    : donation.status === 'picked' ? '66%'
+                                                                        : donation.status === 'assigned' ? '33%'
+                                                                            : '0%'
+                                                            }}
+                                                        ></div>
+
+                                                        <div className="flex justify-between relative z-10 w-full">
+                                                            {/* Step 1: Posted */}
+                                                            <div className="flex flex-col items-center group cursor-default">
+                                                                <div className={`w-12 h-12 rounded-full border-[3px] shadow-sm flex items-center justify-center transition-all duration-300 bg-white ${donation.status ? 'border-blue-500 text-blue-600 scale-110' : 'border-gray-200 text-gray-300'}`}>
+                                                                    <FaClipboardList className="text-lg" />
+                                                                </div>
+                                                                <div className="text-center absolute top-14 w-32 space-y-0.5">
+                                                                    <p className="text-sm font-bold text-gray-800">Posted</p>
+                                                                    <div className="flex flex-col items-center">
+                                                                        <span className="text-[11px] font-medium text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                                                                            {new Date(donation.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                                        </span>
+                                                                        <span className="text-[10px] text-gray-400 mt-0.5">
+                                                                            {new Date(donation.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Step 2: Assigned */}
+                                                            <div className="flex flex-col items-center group cursor-default">
+                                                                <div className={`w-12 h-12 rounded-full border-[3px] shadow-sm flex items-center justify-center transition-all duration-300 bg-white ${['assigned', 'picked', 'delivered', 'completed'].includes(donation.status) ? 'border-orange-500 text-orange-600 scale-110' : 'border-gray-200 text-gray-300'}`}>
+                                                                    <FaUser className="text-lg" />
+                                                                </div>
+                                                                <div className="text-center absolute top-14 w-32 space-y-0.5">
+                                                                    <p className={`text-sm font-bold transition-colors ${['assigned', 'picked', 'delivered', 'completed'].includes(donation.status) ? 'text-gray-800' : 'text-gray-400'}`}>Assigned</p>
+                                                                    {['assigned', 'picked', 'delivered', 'completed'].includes(donation.status) && (
+                                                                        <div className="flex flex-col items-center animate-fade-in">
+                                                                            {donation.volunteer && <span className="text-[11px] font-medium text-orange-600 mb-0.5">@{donation.volunteer.name.split(' ')[0]}</span>}
+                                                                            {(() => {
+                                                                                const dateToUse = donation.assignedAt || donation.updatedAt;
+                                                                                return dateToUse ? (
+                                                                                    <>
+                                                                                        <span className="text-[11px] font-medium text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                                                                                            {new Date(dateToUse).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                                                        </span>
+                                                                                        <span className="text-[10px] text-gray-400 mt-0.5">
+                                                                                            {new Date(dateToUse).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                        </span>
+                                                                                    </>
+                                                                                ) : null;
+                                                                            })()}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Step 3: Picked Up */}
+                                                            <div className="flex flex-col items-center group cursor-default">
+                                                                <div className={`w-12 h-12 rounded-full border-[3px] shadow-sm flex items-center justify-center transition-all duration-300 bg-white ${['picked', 'delivered', 'completed'].includes(donation.status) ? 'border-purple-500 text-purple-600 scale-110' : 'border-gray-200 text-gray-300'}`}>
+                                                                    <FaTruck className="text-lg" />
+                                                                </div>
+                                                                <div className="text-center absolute top-14 w-32 space-y-0.5">
+                                                                    <p className={`text-sm font-bold transition-colors ${['picked', 'delivered', 'completed'].includes(donation.status) ? 'text-gray-800' : 'text-gray-400'}`}>Picked Up</p>
+                                                                    {['picked', 'delivered', 'completed'].includes(donation.status) && (
+                                                                        <div className="flex flex-col items-center animate-fade-in">
+                                                                            {(() => {
+                                                                                const dateToUse = donation.pickedAt || donation.updatedAt;
+                                                                                return dateToUse ? (
+                                                                                    <>
+                                                                                        <span className="text-[11px] font-medium text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100">
+                                                                                            {new Date(dateToUse).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                                                        </span>
+                                                                                        <span className="text-[10px] text-gray-400 mt-0.5">
+                                                                                            {new Date(dateToUse).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                        </span>
+                                                                                    </>
+                                                                                ) : null;
+                                                                            })()}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Step 4: Delivered */}
+                                                            <div className="flex flex-col items-center group cursor-default">
+                                                                <div className={`w-12 h-12 rounded-full border-[3px] shadow-sm flex items-center justify-center transition-all duration-300 bg-white ${['delivered', 'completed'].includes(donation.status) ? 'border-green-500 text-green-600 scale-110' : 'border-gray-200 text-gray-300'}`}>
+                                                                    <FaCheckCircle className="text-lg" />
+                                                                </div>
+                                                                <div className="text-center absolute top-14 w-32 space-y-0.5">
+                                                                    <p className={`text-sm font-bold transition-colors ${['delivered', 'completed'].includes(donation.status) ? 'text-gray-800' : 'text-gray-400'}`}>Delivered</p>
+                                                                    {['delivered', 'completed'].includes(donation.status) && (
+                                                                        <div className="flex flex-col items-center animate-fade-in">
+                                                                            <span className="text-[11px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
+                                                                                Completed
+                                                                            </span>
+                                                                            {(() => {
+                                                                                const dateToUse = donation.deliveredAt || donation.completedAt || donation.updatedAt;
+                                                                                return dateToUse ? (
+                                                                                    <>
+                                                                                        <span className="text-[11px] font-medium text-gray-500 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-100 mt-0.5">
+                                                                                            {new Date(dateToUse).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                                                        </span>
+                                                                                        <span className="text-[10px] text-gray-400 mt-0.5">
+                                                                                            {new Date(dateToUse).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                        </span>
+                                                                                    </>
+                                                                                ) : null;
+                                                                            })()}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </Fragment>
                             ))}
                             {filteredDonations.length === 0 && (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
+                                    <td colSpan="8" className="px-6 py-12 text-center text-gray-400">
                                         No orders found matching your filters.
                                     </td>
                                 </tr>
@@ -148,8 +298,28 @@ const AdminOrders = () => {
                         </tbody>
                     </table>
                 </div>
+                {/* Pagination Controls */}
+                <div className="flex justify-center space-x-4 p-4 border-t border-gray-100">
+                    {visibleCount < filteredDonations.length && (
+                        <button
+                            onClick={() => setVisibleCount(prev => prev + 10)}
+                            className="flex items-center text-emerald-600 font-semibold hover:text-emerald-800 transition-colors"
+                        >
+                            See More <FaChevronDown className="ml-2" />
+                        </button>
+                    )}
+
+                    {visibleCount > 15 && (
+                        <button
+                            onClick={() => setVisibleCount(15)}
+                            className="flex items-center text-gray-500 font-semibold hover:text-gray-700 transition-colors"
+                        >
+                            See Less <FaChevronUp className="ml-2" />
+                        </button>
+                    )}
+                </div>
             </div>
-        </div>
+        </div >
     );
 };
 

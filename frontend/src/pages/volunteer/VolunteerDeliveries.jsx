@@ -135,7 +135,7 @@ const VolunteerDeliveries = () => {
                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                                         <p className="font-bold text-gray-800 mb-1">{delivery.donor?.name || "Unknown Donor"}</p>
                                         <p className="text-sm text-gray-600 mb-2 truncate">{delivery.donor?.location?.address}</p>
-                                        <p className="text-sm text-gray-500 flex items-center"><FaPhone className="mr-2" /> {delivery.donor?.phone || "N/A"}</p>
+                                        <p className="text-sm text-gray-500 flex items-center"><FaPhone className="mr-2 scale-x-[-1]" /> {delivery.donor?.phone || "N/A"}</p>
                                     </div>
 
                                     {isAssigned && (
@@ -194,7 +194,7 @@ const VolunteerDeliveries = () => {
                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                                         <p className="font-bold text-gray-800 mb-1">{delivery.recipient?.name || "Recipient"}</p>
                                         <p className="text-sm text-gray-600 mb-2 truncate">{delivery.recipient?.recipientLocation?.address || "Address pending"}</p>
-                                        <p className="text-sm text-gray-500 flex items-center"><FaPhone className="mr-2" /> {delivery.recipient?.phone || "N/A"}</p>
+                                        <p className="text-sm text-gray-500 flex items-center"><FaPhone className="mr-2 scale-x-[-1]" /> {delivery.recipient?.phone || "N/A"}</p>
                                     </div>
 
                                     {isPicked && (

@@ -188,7 +188,7 @@ const ActiveRequestCard = ({ request }) => (
 
                         {request.volunteer.phone && (
                             <div className="flex items-center text-gray-600 mb-4 bg-white p-2 rounded-lg shadow-sm border border-gray-100">
-                                <FaPhone className="w-4 h-4 text-emerald-500 mr-2" />
+                                <FaPhone className="w-4 h-4 text-emerald-500 mr-2 scale-x-[-1]" />
                                 <span className="text-sm font-medium">{request.volunteer.phone}</span>
                             </div>
                         )}

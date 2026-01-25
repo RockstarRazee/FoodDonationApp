@@ -228,4 +228,39 @@ exports.updateProfile = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+
+};
+
+// Resend OTP
+exports.resendOtp = async (req, res) => {
+    const { email } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Generate New OTP
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+        user.otp = {
+            code: otpCode,
+            expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
+        };
+        await user.save();
+
+        // Send OTP via Email
+        await transporter.sendMail({
+            from: '"Food Donation App" <no-reply@fooddonation.com>',
+            to: email,
+            subject: 'Your Login OTP (Resent)',
+            html: `<h2>Your new OTP is ${otpCode}</h2><p>Valid for 5 minutes</p>`,
+        });
+
+        res.status(200).json({ message: 'New OTP sent to email', email });
+    } catch (error) {
+        console.error('Resend OTP Error:', error);
+        res.status(500).json({ message: 'Failed to resend OTP' });
+    }
 };

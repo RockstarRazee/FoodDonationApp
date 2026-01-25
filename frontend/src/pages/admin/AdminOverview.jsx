@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getAdminStats, getAdminAnalytics } from '../../services/api';
 import { FaUsers, FaBoxOpen, FaTruck, FaCheckCircle, FaExclamationTriangle, FaClock, FaChartPie, FaChartLine } from 'react-icons/fa';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ChartTooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
@@ -40,13 +41,15 @@ const AdminOverview = () => {
         <div className="space-y-8 animate-fade-in-up">
             {/* KPI Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                    label="Total Users"
-                    value={stats.totalUsers}
-                    subtext={`${stats.activeUsers} active this week`}
-                    icon={FaUsers}
-                    color="bg-blue-500"
-                />
+                <Link to="/dashboard/users" className="block transform transition-transform hover:scale-105">
+                    <StatCard
+                        label="Total Users"
+                        value={stats.totalUsers}
+                        subtext={`${stats.activeUsers} active this week`}
+                        icon={FaUsers}
+                        color="bg-blue-500"
+                    />
+                </Link>
                 <StatCard
                     label="Total Donations"
                     value={stats.totalDonations}
@@ -166,8 +169,8 @@ const StatCard = ({ label, value, subtext, icon: Icon, color }) => (
                 <h3 className="text-3xl font-bold text-gray-800">{value}</h3>
                 {subtext && <p className="text-xs text-gray-400 mt-2 font-medium">{subtext}</p>}
             </div>
-            <div className={`p-3 rounded-xl ${color} bg-opacity-10 text-opacity-100`}>
-                <Icon className={`text-xl ${color.replace('bg-', 'text-')}`} />
+            <div className={`p-3 rounded-xl ${color} text-white shadow-sm`}>
+                <Icon className="text-2xl" />
             </div>
         </div>
         {/* Hover Effect */}
