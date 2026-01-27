@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Button from '../../components/common/Button';
 import { getVolunteerDashboard, assignDonation } from '../../services/api';
 import { FaMapMarkerAlt, FaUtensils, FaClock, FaCheck, FaTimes, FaBoxOpen, FaTruck } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -10,6 +11,7 @@ const VolunteerAvailable = () => {
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [deadlines, setDeadlines] = useState({ pickup: '', delivery: '' });
+    const [accepting, setAccepting] = useState(false);
     const navigate = useNavigate();
 
     const fetchData = async () => {
@@ -68,6 +70,7 @@ const VolunteerAvailable = () => {
             return;
         }
 
+        setAccepting(true);
         try {
             await assignDonation(selectedOrder._id, {
                 pickupDeadline: deadlines.pickup,
@@ -78,6 +81,8 @@ const VolunteerAvailable = () => {
             navigate('/volunteer/deliveries');
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to accept order");
+        } finally {
+            setAccepting(false);
         }
     };
 
@@ -109,7 +114,20 @@ const VolunteerAvailable = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {orders.map(order => (
                     <div key={order._id} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all group">
-                        <div className="p-1 bg-gradient-to-r from-emerald-400 to-green-500"></div>
+                        <div className="h-48 overflow-hidden bg-gray-100 relative">
+                            {order.image ? (
+                                <img
+                                    src={`http://localhost:5000${order.image}`}
+                                    alt={order.foodType}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80' }} // Fallback
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gradient-to-r from-emerald-400 to-green-500 flex items-center justify-center">
+                                    <FaUtensils className="text-white text-4xl opacity-50" />
+                                </div>
+                            )}
+                        </div>
                         <div className="p-6">
                             <div className="flex justify-between items-start mb-4">
                                 <h3 className="font-bold text-lg text-gray-800">{order.foodType}</h3>
@@ -209,12 +227,13 @@ const VolunteerAvailable = () => {
                                 >
                                     Cancel
                                 </button>
-                                <button
+                                <Button
                                     onClick={confirmAccept}
-                                    className="px-5 py-2.5 rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition-colors"
+                                    isLoading={accepting}
+                                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200"
                                 >
                                     Confirm & Start
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

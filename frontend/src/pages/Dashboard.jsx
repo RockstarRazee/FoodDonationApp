@@ -13,7 +13,7 @@ const Dashboard = () => {
     }
 
     if (user?.role === 'volunteer') {
-        return <VolunteerDashboard />;
+        return <Navigate to="/volunteer" replace />;
     }
 
     if (user?.role === 'recipient') {

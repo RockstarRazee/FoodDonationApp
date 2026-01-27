@@ -14,6 +14,10 @@ const DonationSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    image: {
+        type: String, // URL/Path to the image
+        required: true,
+    },
     expiryDate: {
         type: Date,
         required: true,

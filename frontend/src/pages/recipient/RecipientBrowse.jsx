@@ -4,6 +4,7 @@ import { FaMapMarkerAlt, FaUtensils, FaClock, FaSearch, FaFilter, FaSearchLocati
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import LocationPicker from '../../components/LocationPicker';
+import Button from '../../components/common/Button';
 import { socket } from '../../services/socket';
 
 const RecipientBrowse = () => {
@@ -19,6 +20,7 @@ const RecipientBrowse = () => {
     const [isSearchingAddr, setIsSearchingAddr] = useState(false);
     const [addressSuggestions, setAddressSuggestions] = useState([]);
     const [isLocating, setIsLocating] = useState(false);
+    const [isRequesting, setIsRequesting] = useState(false);
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -204,6 +206,7 @@ const RecipientBrowse = () => {
         }
 
         const toastId = toast.loading("Processing request...");
+        setIsRequesting(true);
         try {
             await requestDonation(selectedDonation._id, location, address); // Pass address too if API supports it (modified API call below)
             // Note: API might need update to accept address string, currently accepts location array. 
@@ -220,6 +223,8 @@ const RecipientBrowse = () => {
         } catch (error) {
             console.error(error);
             toast.error(error.response?.data?.message || "Request failed", { id: toastId });
+        } finally {
+            setIsRequesting(false);
         }
     };
 
@@ -280,9 +285,10 @@ const RecipientBrowse = () => {
                         <div key={donation._id} className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden group">
                             <div className="relative h-48 bg-gray-200 overflow-hidden">
                                 <img
-                                    src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                                    alt="Food"
+                                    src={donation.image ? `http://localhost:5000${donation.image}` : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"}
+                                    alt={donation.foodType}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" }}
                                 />
                                 <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-emerald-600 shadow-sm">
                                     {donation.distance ? `${Math.round(donation.distance / 1000)} km away` : 'Nearby'}
@@ -387,13 +393,14 @@ const RecipientBrowse = () => {
                             <button onClick={closeRequestModal} className="flex-1 py-3 text-gray-600 font-bold hover:bg-gray-100 rounded-xl transition-colors">
                                 Cancel
                             </button>
-                            <button
+                            <Button
                                 onClick={confirmRequest}
                                 disabled={!location}
-                                className={`flex-1 py-3 rounded-xl font-bold text-white shadow-lg transition-all ${!location ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'}`}
+                                isLoading={isRequesting}
+                                className={`flex-1 py-3 transition-all ${!location ? 'bg-gray-300 cursor-not-allowed shadow-none' : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'}`}
                             >
                                 Confirm Request
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

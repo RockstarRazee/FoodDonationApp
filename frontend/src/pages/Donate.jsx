@@ -5,8 +5,10 @@ import toast from 'react-hot-toast';
 import LocationPicker from '../components/LocationPicker';
 import { FOOD_SUGGESTIONS } from '../data/foodSuggestions';
 import axios from 'axios';
-import { FaMapMarkerAlt, FaUtensils, FaSearchLocation } from 'react-icons/fa';
-const REQUIRED_ACCURACY = 100; // meters
+import { FaMapMarkerAlt, FaUtensils, FaSearchLocation, FaCamera, FaTimes, FaCheck } from 'react-icons/fa';
+import Button from '../components/common/Button';
+import { uploadImage } from '../services/api';
+const REQUIRED_ACCURACY = 3000; // meters (Accepted wider range, user can refine on map)
 const MAX_POSITION_AGE = 5000; // 5 seconds
 const LOCATION_TIMEOUT = 20000; // 20 seconds
 
@@ -17,6 +19,12 @@ const Donate = ({ onSuccess }) => {
     const [address, setAddress] = useState('');
     const [location, setLocation] = useState(null); // [lng, lat]
     const [loading, setLoading] = useState(false);
+
+    // Image Upload State
+    const [image, setImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [uploadingImg, setUploadingImg] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
 
     // Smart Features State
     const [foodSuggestions, setFoodSuggestions] = useState([]);
@@ -183,14 +191,53 @@ const Donate = ({ onSuccess }) => {
         }, LOCATION_TIMEOUT);
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleImageChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
 
+        // Preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+
+        // Auto-upload
+        const formData = new FormData();
+        formData.append('image', file);
+        setUploadingImg(true);
+        try {
+            const { data } = await uploadImage(formData);
+            setImage(data.filePath); // Server path
+            toast.success("Image uploaded!");
+        } catch (error) {
+            console.error("Upload error", error);
+            toast.error("Failed to upload image.");
+            setImagePreview(null);
+        } finally {
+            setUploadingImg(false);
+        }
+    };
+
+    const removeImage = () => {
+        setImage(null);
+        setImagePreview(null);
+    };
+
+    const handlePreSubmit = (e) => {
+        e.preventDefault();
         if (!location) {
             toast.error('Location is required. Please select on map.');
             return;
         }
+        if (!image) {
+            toast.error('Please upload an image of the food.');
+            return;
+        }
+        setShowConfirm(true);
+    };
 
+    const handleFinalSubmit = async () => {
         setLoading(true);
         try {
             await api.post('/donations', {
@@ -198,8 +245,10 @@ const Donate = ({ onSuccess }) => {
                 quantity,
                 expiryDate,
                 address,
-                location // [lon, lat]
+                location, // [lon, lat]
+                image
             });
+            setShowConfirm(false);
             toast.success('Donation posted successfully!');
             if (onSuccess) {
                 onSuccess();
@@ -209,6 +258,7 @@ const Donate = ({ onSuccess }) => {
         } catch (error) {
             console.error(error);
             toast.error(error.response?.data?.message || 'Failed to post donation');
+            setShowConfirm(false);
         } finally {
             setLoading(false);
         }
@@ -230,7 +280,7 @@ const Donate = ({ onSuccess }) => {
                 </div>
 
                 <div className="p-8 space-y-8">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handlePreSubmit} className="space-y-6">
                         {/* Food Details Section */}
                         <div className="space-y-6">
                             <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">Food Details</h2>
@@ -288,6 +338,44 @@ const Donate = ({ onSuccess }) => {
                                     className="w-full px-5 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent focus:bg-white transition-all outline-none text-gray-600"
                                     required
                                 />
+                            </div>
+
+                            {/* Image Upload */}
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Food Image</label>
+                                {!imagePreview ? (
+                                    <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors group cursor-pointer">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                                        />
+                                        <div className="flex flex-col items-center justify-center space-y-2">
+                                            <div className="p-3 bg-emerald-50 rounded-full group-hover:bg-emerald-100 transition-colors">
+                                                <FaCamera className="text-2xl text-emerald-500" />
+                                            </div>
+                                            <p className="text-sm font-medium text-gray-600">Click to upload photo</p>
+                                            <p className="text-xs text-gray-400">JPG, PNG up to 5MB</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="relative rounded-xl overflow-hidden border border-gray-200">
+                                        <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={removeImage}
+                                            className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-sm"
+                                        >
+                                            <FaTimes size={12} />
+                                        </button>
+                                        {uploadingImg && (
+                                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                                <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -350,27 +438,51 @@ const Donate = ({ onSuccess }) => {
                         </div>
 
                         <div className="pt-4">
-                            <button
+                            <Button
                                 type="submit"
-                                disabled={loading}
-                                className={`w-full py-4 rounded-xl font-bold text-lg text-white shadow-lg transform transition-all duration-200 ${loading
-                                    ? 'bg-gray-300 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 hover:shadow-emerald-500/30 hover:-translate-y-1 active:translate-y-0'
-                                    }`}
+                                isLoading={loading}
+                                className="w-full py-4 text-lg shadow-lg"
                             >
-                                {loading ? (
-                                    <span className="flex items-center justify-center space-x-2">
-                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                        <span>Publishing...</span>
-                                    </span>
-                                ) : (
-                                    'Post Donation'
-                                )}
-                            </button>
+                                Post Donation
+                            </Button>
                         </div>
                     </form>
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            {showConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+                    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="p-6 text-center">
+                            <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-emerald-100 mb-4">
+                                <FaCheck className="h-8 w-8 text-emerald-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">Confirm Donation?</h3>
+                            <p className="text-sm text-gray-500 mb-6">
+                                Are you sure you want to post this donation? Volunteers will be notified immediately.
+                            </p>
+
+                            <div className="space-y-3">
+                                <Button
+                                    onClick={handleFinalSubmit}
+                                    isLoading={loading}
+                                    className="w-full py-3 shadow-lg shadow-emerald-200"
+                                >
+                                    Yes, Post it!
+                                </Button>
+                                <button
+                                    onClick={() => setShowConfirm(false)}
+                                    disabled={loading}
+                                    className="w-full py-3 text-gray-500 font-bold hover:bg-gray-50 rounded-xl transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

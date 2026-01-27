@@ -33,7 +33,7 @@ const VolunteerAnalytics = () => {
                     <div className="p-4 bg-orange-50 text-orange-600 rounded-full text-2xl"><FaMedal /></div>
                     <div>
                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Reliability Score</p>
-                        <p className="text-3xl font-bold text-gray-800">{overview.reliabilityScore}%</p>
+                        <p className="text-3xl font-bold text-gray-800">{overview.reliabilityScore}{overview.reliabilityScore !== '-' && '%'}</p>
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-4">

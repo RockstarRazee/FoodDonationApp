@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaHandHoldingHeart, FaTruck, FaUsers } from 'react-icons/fa';
+import Button from '../components/common/Button';
 
 const RoleSelection = () => {
     const { updateUserRole } = useAuth();
@@ -94,19 +95,14 @@ const RoleSelection = () => {
                 </div>
 
                 <div className="text-center">
-                    <button
+                    <Button
                         onClick={handleRoleSelect}
                         disabled={!selectedRole || loading}
-                        className={`
-                            px-12 py-4 rounded-full text-lg font-bold text-white shadow-lg transition-all transform
-                            ${!selectedRole || loading
-                                ? 'bg-gray-300 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-105 hover:shadow-xl'
-                            }
-                        `}
+                        isLoading={loading}
+                        className="px-12 py-4 rounded-full text-lg shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-105"
                     >
-                        {loading ? 'Updating Profile...' : 'Continue to Dashboard'}
-                    </button>
+                        Continue to Dashboard
+                    </Button>
                     <p className="mt-4 text-sm text-gray-500">
                         * You can change this later in your profile settings
                     </p>

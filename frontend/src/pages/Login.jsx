@@ -5,6 +5,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import AuthLayout from '../components/auth/AuthLayout';
 import LoginCard from '../components/auth/LoginCard';
 import RoleDivider from '../components/auth/RoleDivider';
+import Button from '../components/common/Button';
 import { resendOtp } from '../services/api';
 
 const ResendOtpButton = ({ email }) => {
@@ -37,14 +38,16 @@ const ResendOtpButton = ({ email }) => {
     };
 
     return (
-        <button
+        <Button
             type="button"
             onClick={handleResend}
             disabled={!canResend || loading}
-            className={`w-full text-sm font-bold transition-colors py-2 ${canResend ? 'text-blue-600 hover:text-blue-800' : 'text-gray-400 cursor-not-allowed'}`}
+            isLoading={loading}
+            variant="ghost"
+            className={`w-full text-sm font-bold py-2 ${canResend ? 'text-blue-600 hover:text-blue-800' : 'text-gray-400 cursor-not-allowed'}`}
         >
-            {loading ? 'Sending...' : canResend ? 'Resend OTP' : `Resend OTP in ${Math.floor(timer / 60)}:${(timer % 60).toString().padStart(2, '0')}`}
-        </button>
+            {canResend ? 'Resend OTP' : `Resend OTP in ${Math.floor(timer / 60)}:${(timer % 60).toString().padStart(2, '0')}`}
+        </Button>
     );
 };
 
@@ -52,6 +55,7 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
     const [showOtp, setShowOtp] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const { googleAuth, login, user } = useAuth();
     const navigate = useNavigate();
 
@@ -63,28 +67,42 @@ const Login = () => {
         }
     }, [user, navigate]);
 
+    const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
     const handleGoogleSuccess = async (credentialResponse) => {
-        const emailFromApi = await googleAuth(credentialResponse.credential);
-        if (emailFromApi) {
-            setEmail(emailFromApi);
-            setShowOtp(true);
+        setIsGoogleLoading(true);
+        try {
+            const emailFromApi = await googleAuth(credentialResponse.credential);
+            if (emailFromApi) {
+                setEmail(emailFromApi);
+                setShowOtp(true);
+            }
+        } catch (error) {
+            console.error("Google Auth Error:", error);
+        } finally {
+            setIsGoogleLoading(false);
         }
     };
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        const success = await login(email, otp);
-        if (success) {
-            const userData = JSON.parse(localStorage.getItem('user'));
-            if (userData && !userData.isProfileComplete) {
-                navigate('/select-role');
-            } else if (userData?.role === 'recipient') {
-                navigate('/recipient');
-            } else if (userData?.role === 'volunteer') {
-                navigate('/volunteer');
-            } else {
-                navigate('/dashboard');
+        setIsLoading(true);
+        try {
+            const success = await login(email, otp);
+            if (success) {
+                const userData = JSON.parse(localStorage.getItem('user'));
+                if (userData && !userData.isProfileComplete) {
+                    navigate('/select-role');
+                } else if (userData?.role === 'recipient') {
+                    navigate('/recipient');
+                } else if (userData?.role === 'volunteer') {
+                    navigate('/volunteer');
+                } else {
+                    navigate('/dashboard');
+                }
             }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -93,36 +111,45 @@ const Login = () => {
             <LoginCard title="FoodConnect">
                 {!showOtp ? (
                     <div className="space-y-6">
-                        {/* Primary Login */}
-                        <GoogleLogin
-                            onSuccess={handleGoogleSuccess}
-                            onError={() => console.log('Login Failed')}
-                            theme="filled_blue"
-                            size="large"
-                            text="continue_with"
-                            shape="pill"
-                            width="100%"
-                            logo_alignment="left"
-                        />
+                        {isGoogleLoading ? (
+                            <div className="flex flex-col items-center justify-center py-8 space-y-4 animate-fade-in">
+                                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                <p className="text-gray-500 font-medium animate-pulse">Verifying with Google...</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Primary Login */}
+                                <GoogleLogin
+                                    onSuccess={handleGoogleSuccess}
+                                    onError={() => console.log('Login Failed')}
+                                    theme="filled_blue"
+                                    size="large"
+                                    text="continue_with"
+                                    shape="pill"
+                                    width="100%"
+                                    logo_alignment="left"
+                                />
 
-                        <RoleDivider />
+                                <RoleDivider />
 
-                        {/* Admin Login */}
-                        <div className="space-y-3">
-                            <GoogleLogin
-                                onSuccess={handleGoogleSuccess}
-                                onError={() => console.log('Admin Login Failed')}
-                                theme="filled_black"
-                                size="large"
-                                text="signin_with"
-                                shape="pill"
-                                width="100%"
-                                logo_alignment="left"
-                            />
-                            <p className="text-center text-gray-400 text-xs font-medium">
-                                Admin Access requires registered email
-                            </p>
-                        </div>
+                                {/* Admin Login */}
+                                <div className="space-y-3">
+                                    <GoogleLogin
+                                        onSuccess={handleGoogleSuccess}
+                                        onError={() => console.log('Admin Login Failed')}
+                                        theme="filled_black"
+                                        size="large"
+                                        text="signin_with"
+                                        shape="pill"
+                                        width="100%"
+                                        logo_alignment="left"
+                                    />
+                                    <p className="text-center text-gray-400 text-xs font-medium">
+                                        Admin Access requires registered email
+                                    </p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 ) : (
                     <form onSubmit={handleLogin} className="space-y-6 animate-fade-in-up">
@@ -145,12 +172,14 @@ const Login = () => {
                         </div>
 
                         <div className="space-y-3 pt-2">
-                            <button
+                            <Button
                                 type="submit"
-                                className="w-full bg-blue-600 text-white font-bold py-3 rounded-full hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+                                isLoading={isLoading}
+                                className="w-full py-3 rounded-full shadow-lg shadow-blue-200"
+                                variant="blue"
                             >
                                 Verify & Login
-                            </button>
+                            </Button>
 
                             <ResendOtpButton email={email} />
 

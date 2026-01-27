@@ -31,18 +31,30 @@ exports.getMyDonations = async (req, res) => {
 
 // @desc    Create a new donation
 exports.createDonation = async (req, res) => {
-    const { foodType, quantity, expiryDate, location, address } = req.body;
+    console.log("Create Donation Request Body:", req.body); // DEBUG
+    const { foodType, quantity, expiryDate, location, address, image } = req.body;
 
     if (req.user.role !== 'donor') {
+        console.log("Role Check Failed:", req.user.role); // DEBUG
         return res.status(403).json({ message: 'Only donors can post donations' });
     }
 
     try {
+        console.log("Creating Donation with:", {
+            donor: req.user._id,
+            foodType,
+            quantity,
+            expiryDate,
+            image,
+            location: { type: 'Point', coordinates: location, address }
+        });
+
         const donation = await Donation.create({
             donor: req.user._id,
             foodType,
             quantity,
             expiryDate,
+            image,
             location: {
                 type: 'Point',
                 coordinates: location,
@@ -51,9 +63,11 @@ exports.createDonation = async (req, res) => {
             status: 'posted',
         });
 
+        console.log("Donation Created Success:", donation._id); // DEBUG
         getIO().emit('donationCreated', donation);
         res.status(201).json(donation);
     } catch (error) {
+        console.error("Create Donation Error:", error); // DEBUG
         res.status(500).json({ message: error.message });
     }
 };

@@ -44,7 +44,7 @@ exports.getDashboardData = async (req, res) => {
         // Start with 100. Deduct for missed deadlines (if we had history of that). 
         // For now, let's make it static or simple calc: (completed / (assigned + completed)) * 100
         const totalAssignedHistory = completedDeliveries.length + activeDeliveries.length; // Approximate
-        const reliabilityScore = totalAssignedHistory > 0 ? 100 : 100; // Placeholder until we track failures
+        const reliabilityScore = totalAssignedHistory > 0 ? 100 : "-"; // Placeholder until we track failures
 
         // Stats for Charts (Last 7 Days)
         const today = new Date();

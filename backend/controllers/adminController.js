@@ -33,11 +33,27 @@ exports.getStats = async (req, res) => {
 
         const successRate = totalDonations > 0 ? ((completed / totalDonations) * 100).toFixed(1) : 0;
 
-        // Avg Delivery Time (Naive implementation)
-        // Ideally we need 'deliveredAt' timestamp. Using createdAt vs updatedAt for completed items 
-        // is a proxy but not perfect. For strict correctness we need to track status change times.
-        // For now, let's skip complex duration calc or use a placeholder.
-        const avgDeliveryTime = "45m"; // Placeholder
+        // Calculate Avg Delivery Time
+        const completedDonations = await Donation.find({
+            status: { $in: ['delivered', 'completed'] },
+            pickedAt: { $exists: true },
+            deliveredAt: { $exists: true }
+        });
+
+        let totalMinutes = 0;
+        let count = 0;
+
+        completedDonations.forEach(d => {
+            const start = new Date(d.pickedAt);
+            const end = new Date(d.deliveredAt);
+            const diff = (end - start) / 60000; // minutes
+            if (diff > 0) {
+                totalMinutes += diff;
+                count++;
+            }
+        });
+
+        const avgDeliveryTime = count > 0 ? `${Math.round(totalMinutes / count)}m` : "0m";
 
         res.json({
             totalUsers,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Button from '../../components/common/Button';
 import { getVolunteerDashboard, updateDonationStatus, generateDonationOtp } from '../../services/api';
 import { FaTruck, FaBoxOpen, FaCheckCircle, FaMapMarkedAlt, FaKey, FaArrowRight, FaPhone } from 'react-icons/fa';
 import toast from 'react-hot-toast';
@@ -8,6 +9,7 @@ const VolunteerDeliveries = () => {
     const [deliveries, setDeliveries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [otpInputs, setOtpInputs] = useState({});
+    const [processing, setProcessing] = useState({}); // { [id]: 'action' }
 
     const fetchData = async () => {
         try {
@@ -40,6 +42,7 @@ const VolunteerDeliveries = () => {
             return;
         }
 
+        setProcessing(prev => ({ ...prev, [id]: 'verify' }));
         try {
             await updateDonationStatus(id, expectedStatus, otp);
             toast.success(`Status updated to ${expectedStatus.toUpperCase()}!`);
@@ -47,6 +50,8 @@ const VolunteerDeliveries = () => {
             fetchData();
         } catch (error) {
             toast.error(error.response?.data?.message || "Verification Failed");
+        } finally {
+            setProcessing(prev => { const n = { ...prev }; delete n[id]; return n; });
         }
     };
 
@@ -73,12 +78,15 @@ const VolunteerDeliveries = () => {
                 const hasDeliveryOtp = delivery.deliveryOtp && delivery.deliveryOtp.generatedAt;
 
                 const handleTriggerOtp = async (id, type) => {
+                    setProcessing(prev => ({ ...prev, [id]: `otp-${type}` }));
                     try {
                         await generateDonationOtp(id, type);
                         toast.success(`${type === 'pickup' ? 'Pickup' : 'Delivery'} OTP sent to ${type === 'pickup' ? 'Donor' : 'Recipient'}!`);
                         fetchData();
                     } catch (error) {
                         toast.error(error.response?.data?.message || "Failed to generate OTP");
+                    } finally {
+                        setProcessing(prev => { const n = { ...prev }; delete n[id]; return n; });
                     }
                 };
 
@@ -134,26 +142,28 @@ const VolunteerDeliveries = () => {
 
                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                                         <p className="font-bold text-gray-800 mb-1">{delivery.donor?.name || "Unknown Donor"}</p>
-                                        <p className="text-sm text-gray-600 mb-2 truncate">{delivery.donor?.location?.address}</p>
+                                        <p className="text-sm text-gray-600 mb-2 truncate">{delivery.location?.address}</p>
                                         <p className="text-sm text-gray-500 flex items-center"><FaPhone className="mr-2 scale-x-[-1]" /> {delivery.donor?.phone || "N/A"}</p>
                                     </div>
 
                                     {isAssigned && (
                                         <div className="space-y-4">
                                             <button
-                                                onClick={() => handleNavigate(delivery.donor?.location || { coordinates: [0, 0] })}
+                                                onClick={() => handleNavigate(delivery.location || { coordinates: [0, 0] })}
                                                 className="w-full py-3 border-2 border-blue-500 text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center"
                                             >
                                                 <FaMapMarkedAlt className="mr-2" /> Navigate to Donor
                                             </button>
 
                                             {!hasPickupOtp ? (
-                                                <button
+                                                <Button
                                                     onClick={() => handleTriggerOtp(delivery._id, 'pickup')}
-                                                    className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-colors flex items-center justify-center animate-pulse"
+                                                    isLoading={processing[delivery._id] === 'otp-pickup'}
+                                                    variant="blue"
+                                                    className="w-full py-3"
                                                 >
                                                     <FaBoxOpen className="mr-2" /> Food Received (Generate OTP)
-                                                </button>
+                                                </Button>
                                             ) : (
                                                 <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 animate-fade-in">
                                                     <label className="block text-xs font-bold text-blue-800 uppercase mb-2">Enter Donor OTP</label>
@@ -166,11 +176,23 @@ const VolunteerDeliveries = () => {
                                                             value={otpInputs[delivery._id] || ''}
                                                             onChange={e => setOtpInputs({ ...otpInputs, [delivery._id]: e.target.value })}
                                                         />
-                                                        <button
+                                                        <Button
                                                             onClick={() => handleVerify(delivery._id, 'assigned', 'picked')}
-                                                            className="px-6 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200"
+                                                            isLoading={processing[delivery._id] === 'verify'}
+                                                            variant="blue"
+                                                            className="px-6"
                                                         >
                                                             Verify
+                                                        </Button>
+                                                    </div>
+                                                    <div className="flex justify-between items-center mt-3 px-1">
+                                                        <span className="text-xs text-blue-400 font-medium">OTP valid for 5 mins</span>
+                                                        <button
+                                                            onClick={() => handleTriggerOtp(delivery._id, 'pickup')}
+                                                            disabled={processing[delivery._id] === 'otp-pickup'}
+                                                            className="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors disabled:opacity-50"
+                                                        >
+                                                            {processing[delivery._id] === 'otp-pickup' ? 'Sending...' : 'Resend OTP'}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -193,26 +215,28 @@ const VolunteerDeliveries = () => {
 
                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                                         <p className="font-bold text-gray-800 mb-1">{delivery.recipient?.name || "Recipient"}</p>
-                                        <p className="text-sm text-gray-600 mb-2 truncate">{delivery.recipient?.recipientLocation?.address || "Address pending"}</p>
+                                        <p className="text-sm text-gray-600 mb-2 truncate">{delivery.recipientLocation?.address || "Address pending"}</p>
                                         <p className="text-sm text-gray-500 flex items-center"><FaPhone className="mr-2 scale-x-[-1]" /> {delivery.recipient?.phone || "N/A"}</p>
                                     </div>
 
                                     {isPicked && (
                                         <div className="space-y-4">
                                             <button
-                                                onClick={() => handleNavigate(delivery.recipient?.recipientLocation || { coordinates: [0, 0] })}
+                                                onClick={() => handleNavigate(delivery.recipientLocation || { coordinates: [0, 0] })}
                                                 className="w-full py-3 border-2 border-purple-500 text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors flex items-center justify-center"
                                             >
                                                 <FaMapMarkedAlt className="mr-2" /> Navigate to Recipient
                                             </button>
 
                                             {!hasDeliveryOtp ? (
-                                                <button
+                                                <Button
                                                     onClick={() => handleTriggerOtp(delivery._id, 'delivery')}
-                                                    className="w-full py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 shadow-lg shadow-purple-200 transition-colors flex items-center justify-center animate-pulse"
+                                                    isLoading={processing[delivery._id] === 'otp-delivery'}
+                                                    variant="purple"
+                                                    className="w-full py-3"
                                                 >
                                                     <FaCheckCircle className="mr-2" /> Delivery Completed (Generate OTP)
-                                                </button>
+                                                </Button>
                                             ) : (
                                                 <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in">
                                                     <label className="block text-xs font-bold text-purple-800 uppercase mb-2">Enter Recipient OTP</label>
@@ -225,11 +249,23 @@ const VolunteerDeliveries = () => {
                                                             value={otpInputs[delivery._id] || ''}
                                                             onChange={e => setOtpInputs({ ...otpInputs, [delivery._id]: e.target.value })}
                                                         />
-                                                        <button
+                                                        <Button
                                                             onClick={() => handleVerify(delivery._id, 'picked', 'delivered')}
-                                                            className="px-6 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 shadow-lg shadow-purple-200"
+                                                            isLoading={processing[delivery._id] === 'verify'}
+                                                            variant="purple"
+                                                            className="px-6"
                                                         >
                                                             Complete
+                                                        </Button>
+                                                    </div>
+                                                    <div className="flex justify-between items-center mt-3 px-1">
+                                                        <span className="text-xs text-purple-400 font-medium">OTP valid for 5 mins</span>
+                                                        <button
+                                                            onClick={() => handleTriggerOtp(delivery._id, 'delivery')}
+                                                            disabled={processing[delivery._id] === 'otp-delivery'}
+                                                            className="text-xs font-bold text-purple-600 hover:text-purple-800 hover:underline transition-colors disabled:opacity-50"
+                                                        >
+                                                            {processing[delivery._id] === 'otp-delivery' ? 'Sending...' : 'Resend OTP'}
                                                         </button>
                                                     </div>
                                                 </div>
