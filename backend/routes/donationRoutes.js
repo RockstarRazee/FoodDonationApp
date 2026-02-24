@@ -18,6 +18,7 @@ router.post('/', protect, createDonation);
 router.get('/my/analytics', protect, getDonorAnalytics);
 router.get('/my', protect, getMyDonations);
 router.get('/nearby', protect, getNearbyDonations);
+router.get('/geocode', protect, require('../controllers/donationController').reverseGeocode); // Must be before /:id
 router.get('/:id', protect, getDonationById);
 router.post('/:id/otp', protect, generateOtp);
 router.put('/:id/assign', protect, assignDonation);

@@ -126,7 +126,6 @@ const Login = () => {
                                     size="large"
                                     text="continue_with"
                                     shape="pill"
-                                    width="100%"
                                     logo_alignment="left"
                                 />
 
@@ -141,7 +140,6 @@ const Login = () => {
                                         size="large"
                                         text="signin_with"
                                         shape="pill"
-                                        width="100%"
                                         logo_alignment="left"
                                     />
                                     <p className="text-center text-gray-400 text-xs font-medium">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -8,6 +8,7 @@ import axios from 'axios';
 import { FaMapMarkerAlt, FaUtensils, FaSearchLocation, FaCamera, FaTimes, FaCheck } from 'react-icons/fa';
 import Button from '../components/common/Button';
 import { uploadImage } from '../services/api';
+
 const REQUIRED_ACCURACY = 3000; // meters (Accepted wider range, user can refine on map)
 const MAX_POSITION_AGE = 5000; // 5 seconds
 const LOCATION_TIMEOUT = 20000; // 20 seconds
@@ -19,6 +20,7 @@ const Donate = ({ onSuccess }) => {
     const [address, setAddress] = useState('');
     const [location, setLocation] = useState(null); // [lng, lat]
     const [loading, setLoading] = useState(false);
+    const skipReverseGeo = useRef(false);
 
     // Image Upload State
     const [image, setImage] = useState(null);
@@ -37,6 +39,34 @@ const Donate = ({ onSuccess }) => {
         // Optional: Auto-detect location on load?
         // Let's rely on user action "Use Current Location" for better UX as per plan
     }, []);
+
+    // Reverse Geocode when location updates (e.g. Map Click or GPS)
+    useEffect(() => {
+        const reverseGeocode = async () => {
+            if (!location) return;
+
+            // Skip if this update came from manual address selection
+            if (skipReverseGeo.current) {
+                skipReverseGeo.current = false;
+                return;
+            }
+
+            try {
+                const [lng, lat] = location;
+                // USE BACKEND PROXY to avoid CORS
+                const { data } = await api.get(`/donations/geocode?lat=${lat}&lon=${lng}`);
+                if (data && data.display_name) {
+                    setAddress(data.display_name);
+                }
+            } catch (err) {
+                console.error("Reverse geocode failed", err);
+                // Don't toast error here to avoid spamming if user drags map around a lot
+            }
+        };
+
+        const timer = setTimeout(reverseGeocode, 500); // Debounce map drags
+        return () => clearTimeout(timer);
+    }, [location]);
 
     // Food Autocomplete
     const handleFoodChange = (e) => {
@@ -90,6 +120,7 @@ const Donate = ({ onSuccess }) => {
         setAddressSuggestions([]);
         const lat = parseFloat(item.lat);
         const lon = parseFloat(item.lon);
+        skipReverseGeo.current = true; // Prevent reverse-geo overwriting this
         setLocation([lon, lat]); // GeoJSON [lng, lat]
         toast.success("Location pinned from address!");
     };
@@ -153,17 +184,8 @@ const Donate = ({ onSuccess }) => {
                 cleanup();
 
                 // 1. Set Location (GeoJSON [lng, lat])
+                // Reverse geocoding will be handled by the useEffect
                 setLocation([longitude, latitude]);
-
-                // 2. Reverse Geocode
-                try {
-                    const { data } = await axios.get(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
-                    if (data && data.display_name) {
-                        setAddress(data.display_name);
-                    }
-                } catch (err) {
-                    console.error("Reverse geocode failed", err);
-                }
 
                 toast.success(`GPS Locked! (Accuracy: ${Math.round(accuracy)}m)`, { id: 'geo' });
             },
@@ -190,6 +212,7 @@ const Donate = ({ onSuccess }) => {
             );
         }, LOCATION_TIMEOUT);
     };
+
 
     const handleImageChange = async (e) => {
         const file = e.target.files[0];

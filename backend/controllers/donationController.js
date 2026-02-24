@@ -1,6 +1,7 @@
 const Donation = require('../models/Donation');
 const User = require('../models/User');
 const { getIO } = require('../socket');
+const axios = require('axios');
 
 // ... existing GET methods (getMyDonations, createDonation, getNearbyDonations, getDonationById) ...
 
@@ -191,8 +192,8 @@ exports.requestDonation = async (req, res) => {
 
 // STEP 3: Volunteer Accepts + Sets Deadlines
 exports.assignDonation = async (req, res) => {
-    if (req.user.role !== 'volunteer') {
-        return res.status(403).json({ message: 'Only volunteers can accept donations' });
+    if (req.user.role !== 'volunteer' && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Only volunteers or admins can accept donations' });
     }
 
     const { pickupDeadline, deliveryDeadline } = req.body;
@@ -261,8 +262,8 @@ exports.assignDonation = async (req, res) => {
 exports.generateOtp = async (req, res) => {
     const { type } = req.body; // 'pickup' | 'delivery'
 
-    if (req.user.role !== 'volunteer') {
-        return res.status(403).json({ message: 'Only assigned volunteer can trigger OTP' });
+    if (req.user.role !== 'volunteer' && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Only assigned volunteer or admin can trigger OTP' });
     }
 
     try {
@@ -570,5 +571,23 @@ exports.getDonorAnalytics = async (req, res) => {
     } catch (error) {
         console.error('Analytics Error:', error);
         res.status(500).json({ message: error.message });
+    }
+};
+
+// @desc    Reverse Geocode Proxy
+exports.reverseGeocode = async (req, res) => {
+    const { lat, lon } = req.query;
+    if (!lat || !lon) return res.status(400).json({ message: 'Missing lat/lon' });
+
+    try {
+        const { data } = await axios.get(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`, {
+            headers: {
+                'User-Agent': 'FoodDonationApp/1.0 (razeerockstar@gmail.com)' // Identify app to respect usage policy
+            }
+        });
+        res.json(data);
+    } catch (error) {
+        console.error('Geocode Proxy Error:', error.message);
+        res.status(502).json({ message: 'Geocoding service unavailable' });
     }
 };

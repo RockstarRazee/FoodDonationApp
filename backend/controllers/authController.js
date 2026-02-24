@@ -65,17 +65,25 @@ exports.googleLogin = async (req, res) => {
         await user.save();
 
         // Send OTP via Email
-        await transporter.sendMail({
-            from: '"Food Donation App" <no-reply@fooddonation.com>',
-            to: email,
-            subject: 'Your Login OTP',
-            html: `<h2>Your OTP is ${otpCode}</h2><p>Valid for 5 minutes</p>`,
-        });
+        try {
+            await transporter.sendMail({
+                from: '"Food Donation App" <no-reply@fooddonation.com>',
+                to: email,
+                subject: 'Your Login OTP',
+                html: `<h2>Your OTP is ${otpCode}</h2><p>Valid for 5 minutes</p>`,
+            });
+        } catch (emailError) {
+            console.error('Failed to send email:', emailError.message);
+            // CONSOLE LOG OTP FOR DEBUGGING IF EMAIL FAILS
+            console.log('------------------------------------------------');
+            console.log(`LOGIN OTP for ${email}: ${otpCode}`);
+            console.log('------------------------------------------------');
+        }
 
         res.status(200).json({ message: 'OTP sent to email', email });
     } catch (error) {
         console.error('Google Login Error:', error);
-        res.status(500).json({ message: 'Google authentication failed' });
+        res.status(500).json({ message: 'Google authentication failed', error: error.message, stack: error.stack });
     }
 };
 
@@ -195,24 +203,29 @@ exports.updateProfile = async (req, res) => {
 
         const updatedUser = await user.save();
 
-        // REAL-TIME UPDATE: Find active donations where this user is involved
-        const activeDonations = await Donation.find({
-            $or: [{ donor: user._id }, { volunteer: user._id }, { recipient: user._id }],
-            status: { $in: ['posted', 'requested', 'assigned', 'picked'] }
-        });
+        // REAL-TIME UPDATE
+        try {
+            const activeDonations = await Donation.find({
+                $or: [{ donor: user._id }, { volunteer: user._id }, { recipient: user._id }],
+                status: { $in: ['posted', 'requested', 'assigned', 'picked'] }
+            });
 
-        const io = socket.getIO();
-        activeDonations.forEach(donation => {
-            io.emit('donationUpdated', { donationId: donation._id, status: donation.status });
-        });
+            const io = socket.getIO();
 
-        // Emit general user update for profile pictures/info real-time
-        io.emit('userUpdated', {
-            _id: updatedUser._id,
-            name: updatedUser.name,
-            avatar: updatedUser.avatar,
-            phone: updatedUser.phone
-        });
+            activeDonations.forEach(donation => {
+                io.emit('donationUpdated', { donationId: donation._id, status: donation.status });
+            });
+
+            // Emit general user update
+            io.emit('userUpdated', {
+                _id: updatedUser._id,
+                name: updatedUser.name,
+                avatar: updatedUser.avatar,
+                phone: updatedUser.phone
+            });
+        } catch (socketError) {
+            console.error('Socket Notification Failed (Non-fatal):', socketError.message);
+        }
 
         // Return full user object expected by frontend
         res.json({
